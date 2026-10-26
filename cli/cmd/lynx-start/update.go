@@ -22,8 +22,9 @@ import (
 //
 // 语义：基线 ≡ 上次从 registry 同步的形态（add 时建立，update 后刷新）。
 // 本地与 upstream 改动不重叠则自动合并；同区改动打 git 冲突标记，冲突文件
-// 覆盖前在 .lynx-start/backup/ 留副本。upstream 删除的文件不自动删（提示）。
-// 建议先 commit 应用再 update——合并写盘不可自动回滚。
+// 覆盖前在 .lynx-start/backup/ 留副本。upstream 删除：本地未改 → 自动删
+// （删除前同款备份）；本地有改动 → 保留并提示。建议先 commit 应用再
+// update——合并写盘不可自动回滚。
 func cmdUpdate(args []string) error {
 	fs := flag.NewFlagSet("update", flag.ContinueOnError)
 	registryDir := fs.String("registry", os.Getenv("LYNXSTART_REGISTRY"), "lynx-start repo directory")
@@ -141,10 +142,11 @@ func cmdUpdate(args []string) error {
 	// --dry-run：合并计划完整呈现（自动合并 / 冲突 / upstream 删除），
 	// 不写任何文件——把「写盘不可回滚，先 commit」的判断依据交给用户。
 	if *dryRun {
-		fmt.Printf("\n(dry-run) %s %s → %s: %d auto-merged, %d unchanged, %d conflicts, %d removed-upstream\n",
-			name, installed.Version, item.Version, len(res.Updates), res.Unchanged, len(res.Conflicts), len(res.Removed))
+		fmt.Printf("\n(dry-run) %s %s → %s: %d auto-merged, %d unchanged, %d conflicts, %d deleted-upstream, %d removed-upstream-needs-review\n",
+			name, installed.Version, item.Version, len(res.Updates), res.Unchanged, len(res.Conflicts), len(res.Deleted), len(res.Removed))
 		printPlan("auto-merge", sortedKeys(res.Updates))
 		printPlan("conflict", res.Conflicts)
+		printPlan("delete", res.Deleted)
 		printPlan("removed-upstream", res.Removed)
 		if len(res.Conflicts) > 0 {
 			fmt.Println("  conflicts would get git markers (yours/baseline/theirs); nothing is written in dry-run")
@@ -153,9 +155,9 @@ func cmdUpdate(args []string) error {
 		return nil
 	}
 
-	// 冲突文件覆盖本地前留备份（用户目录缓存，与应用仓库分离）。
+	// 冲突覆盖与自动删除前留备份（用户目录缓存，与应用仓库分离）。
 	backup := backupCacheDir(m.ModulePath, name)
-	for _, rel := range res.Conflicts {
+	for _, rel := range append(append([]string{}, res.Conflicts...), res.Deleted...) {
 		src := filepath.Join(appDir, filepath.FromSlash(rel))
 		if content, err := os.ReadFile(src); err == nil {
 			dst := filepath.Join(backup, filepath.FromSlash(rel))
@@ -177,6 +179,15 @@ func cmdUpdate(args []string) error {
 		if err := os.WriteFile(target, res.Updates[rel], 0o644); err != nil {
 			return fmt.Errorf("write %s: %w", rel, err)
 		}
+	}
+
+	// upstream 删除且本地未改的文件落盘删除；清掉因此变空的父目录
+	// （vendored policy.proto 弃用后残留副本会与 BSR dep 同路径冲突）。
+	for _, rel := range res.Deleted {
+		if err := os.Remove(filepath.Join(appDir, filepath.FromSlash(rel))); err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("delete %s: %w", rel, err)
+		}
+		removeEmptyParentDirs(appDir, filepath.Join(appDir, filepath.Dir(filepath.FromSlash(rel))))
 	}
 
 	// 桥接包无条件刷新（注入物，不参与合并）。
@@ -226,15 +237,21 @@ func cmdUpdate(args []string) error {
 	}
 
 	fmt.Printf("\n✓ %s %s → %s (%d merged, %d unchanged", name, installed.Version, item.Version, len(rels), res.Unchanged)
+	if len(res.Deleted) > 0 {
+		fmt.Printf(", %d deleted", len(res.Deleted))
+	}
 	if len(res.Conflicts) > 0 {
 		fmt.Printf(", %d CONFLICTS", len(res.Conflicts))
 	}
 	fmt.Println(")")
+	for _, rel := range res.Deleted {
+		fmt.Printf("  deleted upstream (pre-delete copy in %s/%s)\n", backup, rel)
+	}
 	for _, rel := range res.Conflicts {
 		fmt.Printf("  conflict %s  (markers: yours/baseline/theirs; pre-update copy in %s/%s)\n", rel, backup, rel)
 	}
 	for _, rel := range res.Removed {
-		fmt.Printf("  removed upstream, still present: %s (delete manually if unwanted)\n", rel)
+		fmt.Printf("  removed upstream with local edits, kept: %s (delete manually if unwanted)\n", rel)
 	}
 	if len(res.Conflicts) > 0 {
 		fmt.Println("  resolve conflicts (search for <<<<<<<), then build: go build ./...")
@@ -291,6 +308,29 @@ func renderUpstream(idx *registry.Index, registryDir string, item *registry.Item
 func printPlan(kind string, rels []string) {
 	for _, rel := range rels {
 		fmt.Printf("  %-15s %s\n", kind, rel)
+	}
+}
+
+// removeEmptyParentDirs 从 dir 向上删除空目录直到 root（不含 root）——
+// upstream 删除文件后不留空壳目录树（如 proto/grpcapi/v1/）。
+func removeEmptyParentDirs(root, dir string) {
+	rootAbs, err := filepath.Abs(root)
+	if err != nil {
+		return
+	}
+	dirAbs, err := filepath.Abs(dir)
+	if err != nil {
+		return
+	}
+	for strings.HasPrefix(dirAbs, rootAbs+string(filepath.Separator)) {
+		entries, err := os.ReadDir(dirAbs)
+		if err != nil || len(entries) > 0 {
+			return
+		}
+		if err := os.Remove(dirAbs); err != nil {
+			return
+		}
+		dirAbs = filepath.Dir(dirAbs)
 	}
 }
 

@@ -56,12 +56,15 @@ func TestTree(t *testing.T) {
 		"unchanged.go":  []byte("package x\n"),
 		"local-edit.go": []byte("a\nb\nc\nd\n"),
 		"up-deletes.go": []byte("gone\n"),
+		// upstream 删除 + 本地改动：必须保守提示，不自动删。
+		"up-deletes-local-touched.go": []byte("keep-me\n"),
 	}
 	local := map[string][]byte{
-		"unchanged.go":  []byte("package x\n"),
-		"local-edit.go": []byte("A\nb\nc\nd\n"), // 改首行
-		"up-deletes.go": []byte("gone\n"),
-		"mine-only.go":  []byte("mine\n"), // 用户自建，不碰
+		"unchanged.go":                []byte("package x\n"),
+		"local-edit.go":               []byte("A\nb\nc\nd\n"), // 改首行
+		"up-deletes.go":               []byte("gone\n"),
+		"up-deletes-local-touched.go": []byte("KEEP-ME\n"),
+		"mine-only.go":                []byte("mine\n"), // 用户自建，不碰
 	}
 	other := map[string][]byte{
 		"unchanged.go":  []byte("package x\n"),
@@ -81,7 +84,12 @@ func TestTree(t *testing.T) {
 	if got := string(res.Updates["new-file.go"]); got != "package y\n" {
 		t.Fatalf("new-file.go = %q", got)
 	}
-	if len(res.Removed) != 1 || res.Removed[0] != "up-deletes.go" {
+	// upstream 删除且本地未改 → 安全删除（vendored policy.proto 弃用场景）。
+	if len(res.Deleted) != 1 || res.Deleted[0] != "up-deletes.go" {
+		t.Fatalf("Deleted = %v", res.Deleted)
+	}
+	// upstream 删除但本地改过 → 保守提示。
+	if len(res.Removed) != 1 || res.Removed[0] != "up-deletes-local-touched.go" {
 		t.Fatalf("Removed = %v", res.Removed)
 	}
 	if _, touched := res.Updates["mine-only.go"]; touched {

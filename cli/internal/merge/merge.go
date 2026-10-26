@@ -64,7 +64,10 @@ type TreeResult struct {
 	Updates map[string][]byte
 	// Conflicts 是存在冲突标记的路径（用户须解决后才能编译/提交）。
 	Conflicts []string
-	// Removed 是 upstream 已删除、应用仍存在的路径（不自动删，提示处理）。
+	// Deleted 是 upstream 已删除且本地未改、可安全删除的路径
+	// （调用方先备份后落盘删除）。
+	Deleted []string
+	// Removed 是 upstream 已删除但本地有改动的路径（不自动删，提示处理）。
 	Removed []string
 	// Unchanged 是三方一致、无需写入的文件数。
 	Unchanged int
@@ -74,7 +77,11 @@ type TreeResult struct {
 // 判定：
 //   - 三方都有：git merge-file；local 与 other 改动不重叠则干净合并
 //   - upstream 新增（不在 base）：直接采用；本地恰有同名文件则视为冲突
-//   - upstream 删除（只在 base）：不自动删，列入 Removed 提示
+//   - upstream 删除、本地未改（local==base）：安全删除（与 git 三方语义
+//     一致；上游明确删了而用户没动过，结果就该是删。首次实践：模块
+//     弃 vendored policy.proto 改 BSR dep，残留副本与 dep 同路径冲突）
+//   - upstream 删除、本地有改动：不可逆判断交还用户，列入 Removed 提示
+//   - upstream 删除、用户也已删：无事
 //   - 只在 local：用户自己的文件，不碰
 func Tree(local, base, other map[string][]byte) (*TreeResult, error) {
 	res := &TreeResult{Updates: map[string][]byte{}}
@@ -96,9 +103,11 @@ func Tree(local, base, other map[string][]byte) (*TreeResult, error) {
 		b, inBase := base[p]
 		l, inLocal := local[p]
 		switch {
+		case !inOther && inBase && !inLocal:
+			// upstream 与用户都删了：无事。
+		case !inOther && inBase && string(l) == string(b):
+			res.Deleted = append(res.Deleted, p)
 		case !inOther && inBase:
-			// upstream 已删除。若 local 与 base 相同（用户没改过）可以自动删——
-			// 但删源码文件不可逆，一律提示人工确认。
 			res.Removed = append(res.Removed, p)
 		case !inBase && inOther && !inLocal:
 			res.Updates[p] = o
