@@ -107,6 +107,7 @@ WORK3="$(mktemp -d)"
   && grep -q 'const dummyHash' modules/identity/internal/app/identity.go \
   && printf '\n// localCustomMark marks an app-side edit kept by the update merge.\nconst localCustomMark = "e2e-update"\n' >> modules/identity/internal/app/identity.go \
   && "$WORK/lyx" update identity --registry "$ROOT" >/dev/null \
+  && [ ! -e proto/grpcapi ] \
   && grep -q 'localCustomMark' modules/identity/internal/app/identity.go \
   && grep -q 'password.DummyHash()' modules/identity/internal/app/identity.go \
   && [ "$(grep -c 'const dummyHash' modules/identity/internal/app/identity.go)" = "0" ]) \

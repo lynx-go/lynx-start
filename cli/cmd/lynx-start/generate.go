@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -32,6 +33,12 @@ func cmdGenerate(args []string) error {
 	if _, err := exec.LookPath("buf"); err != nil {
 		return fmt.Errorf("buf not found in PATH: run `mise install` in the app (scaffold pins the buf toolchain)")
 	}
+	if !hasLocalProto(appDir) {
+		// 未装模块的空应用 buf lint 会因 proto 空模块报错（policy.proto 已
+		// 改经 BSR dep 供给，本地 proto/ 只承载已装模块契约源）。
+		fmt.Println("skip buf pipeline: no proto/**/*.proto yet — run `lynx-start add <module>` first")
+		return nil
+	}
 
 	steps := [][]string{
 		{"buf", "dep", "update"},
@@ -48,4 +55,20 @@ func cmdGenerate(args []string) error {
 		}
 	}
 	return nil
+}
+
+// hasLocalProto 报告应用 proto/ 下是否已有 .proto 契约源（空应用拦截用）。
+func hasLocalProto(appDir string) bool {
+	found := false
+	_ = filepath.WalkDir(filepath.Join(appDir, "proto"), func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return fs.SkipAll
+		}
+		if !d.IsDir() && strings.HasSuffix(path, ".proto") {
+			found = true
+			return fs.SkipAll
+		}
+		return nil
+	})
+	return found
 }

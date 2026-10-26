@@ -174,7 +174,10 @@ service TodoService {
 }
 ```
 
-Policy annotation cheat sheet (full semantics in `scaffold/proto/grpcapi/v1/policy.proto`):
+Policy annotation cheat sheet (`grpcapi/v1/policy.proto` resolves from the
+BSR via the `buf.build/lynx-go/grpcapi` dependency in `buf.yaml`; source of
+truth is `proto/grpcapi/v1/policy.proto` in the grpcapi repo — neither
+modules nor apps vendor it, and Go types come from `github.com/lynx-go/grpcapi`):
 
 - `anonymous: true` — the method is public;
 - `permissions: [...]` (MATCH_ALL) / `roles: [...]` (MATCH_ANY) — take effect
@@ -291,10 +294,11 @@ explicit; there is no generated DI.
 Put the module into `modules/<name>/` of this repo as a **real Go module**:
 
 1. Ship its own `go.mod` (module path like
-   `github.com/lynx-go/lynx-start/modules/<name>`), `buf.yaml`/`buf.gen.yaml`,
-   and committed genproto — compiled and tested inside this repo, so kernel
-   breaking changes surface in this repo's CI instead of blowing up in some
-   app at install time;
+   `github.com/lynx-go/lynx-start/modules/<name>`), `buf.yaml`/`buf.gen.yaml`
+   (deps declare `buf.build/lynx-go/grpcapi`: policy.proto resolves from the
+   BSR and is never vendored into the module), and committed genproto —
+   compiled and tested inside this repo, so kernel breaking changes surface in
+   this repo's CI instead of blowing up in some app at install time;
 2. Write `item.json`:
 
    ```json

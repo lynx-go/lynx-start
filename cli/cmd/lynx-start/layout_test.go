@@ -14,7 +14,6 @@ func TestRelocateModule(t *testing.T) {
 		"internal/infra/identity/repo.go":          "modules/identity/internal/infra/repo.go",
 		"internal/infra/identity/migrations/x.sql": "modules/identity/internal/infra/migrations/x.sql",
 		"proto/identity/v1/identity.proto":         "proto/identity/v1/identity.proto",
-		"proto/grpcapi/v1/policy.proto":            "proto/grpcapi/v1/policy.proto",
 	}
 	for in, want := range cases {
 		got, err := relocateModule("identity", in)

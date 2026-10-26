@@ -37,8 +37,16 @@ AssertDepsAtAPILayer 相对路径深度随之变化，安装时做一条确定�
 
 ### 3. proto 与 genproto 均集中应用根、generate 收敛 CLI
 
-- proto 契约源集中应用根 `proto/<m>/v1/`（buf 单根、vendored policy.proto
-  共享保护、proto-drift CI 不动）。
+- proto 契约源集中应用根 `proto/<m>/v1/`（buf 单根、proto-drift CI 不动）。
+  **修订记录（2026-10，Unreleased）**：初版把 grpcapi 的 `policy.proto`
+  vendor 到每个模块与应用的 `proto/grpcapi/v1/`（生成排除 + breaking
+  ignore）——共享保护是引入它的动机，但代价是事实源裂成十份拷贝，
+  grpcapi 上游演进时靠人工同步，且 buf 配置背了两处特例（exclude_paths、
+  breaking.ignore）。推翻：`buf.yaml` deps 直接声明 BSR 模块
+  `buf.build/lynx-go/grpcapi`（buf.lock 钉 commit，可复现），声明语法
+  单一事实源回归 grpcapi 仓；模块不再携带 vendored 副本，`lynx-start
+  generate` 对未装模块的空应用（本地无 `proto/**/*.proto`）前置跳过 buf
+  管线并给可行动提示。
 - genproto 生成物集中应用根 `genproto/<m>/v1/`（buf 直接输出、零后处理）。
   **修订记录（v0.2.1）**：v0.2.0 曾把 genproto 归位 `modules/<m>/genproto/`
   （generate 后搬移）——为「改写零特例 + 模块树 100% 镜像」；复盘推翻：

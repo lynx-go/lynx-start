@@ -71,7 +71,8 @@ func cmdRemove(args []string) error {
 		return fmt.Errorf("module %s is depended on by %s: remove them first (reverse topological order)", name, strings.Join(dependents, ", "))
 	}
 
-	// 共享文件保护：vendored proto 等被多模块 Files 收录的文件不删。
+	// 共享文件保护：被其他已装模块 Files 收录的文件不删（同一路径
+	// 多模块分发的形态，历史上是 vendored policy.proto——现已改 BSR dep）。
 	owned := map[string]bool{}
 	for _, other := range m.Modules {
 		if other.Name == name {

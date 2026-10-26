@@ -6,6 +6,20 @@
 
 ## Unreleased
 
+- **grpcapi 声明语法(policy.proto)改经 BSR 供给,弃 vendored 拷贝**
+  (ADR-0006 修订):模块与应用的 `buf.yaml` 直接依赖
+  `buf.build/lynx-go/grpcapi`(buf.lock 钉 commit),删除十处
+  `proto/grpcapi/v1/policy.proto` vendored 副本(scaffold + 8 模块 + demo),
+  `buf.gen.yaml` 的 exclude_paths 与 breaking.ignore 两处特例一并消失;
+  Go 类型不变,仍由 `github.com/lynx-go/grpcapi` 提供。CLI `generate`
+  对未装模块的空应用前置跳过 buf 管线(本地无 proto 时 buf lint 会因
+  空模块报错)。**update 合并删除语义精化**(ADR-0006 同款修订):upstream
+  删除且本地未改的文件改为自动删除(删除前留备份进 .lynx-start/backup,
+  与冲突备份同款);本地有改动仍保留并提示——存量应用装旧 tag(载荷带
+  vendored 副本)升新版即走此路径,残留副本会与 BSR dep 同路径冲突。
+  **存量应用升级姿势**:逐模块 `lynx-start update <m> --force`(刷新
+  基线/manifest,自动清掉 vendored 副本),buf.yaml deps 补
+  `buf.build/lynx-go/grpcapi`,`buf dep update` 后一切照旧。
 - **registry 第 8 个模块 `task` v0.1.0(组织内任务,第一个组织挂靠业务资源——
   ADR-0008 姿势首秀 + ADR-0007 通道②首秀)**:
   - 姿势落实:organization_id 是租户键(NOT NULL 只存 ID,契约④;本域无业务
