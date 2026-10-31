@@ -1,14 +1,13 @@
-# 发布:推 kernel/v*、cli/v* 或 modules/*/v* tag 自动建 GitHub Release,notes
-# 从根 CHANGELOG.md 摘取对应小节(如 "## identity v0.1.1 ...")。小节缺失时
-# 兜底占位文案,不阻塞发布。
+# 发布：推根 tag（v*，根 module）或 contrib 子模块 tag（contrib/*/v*）自动建
+# GitHub Release，notes 从根 CHANGELOG.md 摘取对应小节。小节缺失时兜底占位
+# 文案，不阻塞发布。发版纪律（ADR-0009 D15）：根与 contrib 独立 tag 独立节奏。
 name: release
 
 on:
   push:
     tags:
-      - "kernel/v*"
-      - "cli/v*"
-      - "modules/*/v*"
+      - "v*"
+      - "contrib/*/v*"
 
 permissions:
   contents: write
@@ -24,9 +23,8 @@ jobs:
           set -eu
           tag="${GITHUB_REF_NAME}"
           case "$tag" in
-            kernel/*)  section="kernel ${tag#kernel/}" ;;
-            cli/*)     section="cli ${tag#cli/}" ;;
-            modules/*) mod="${tag#modules/}"; section="${mod%%/*} ${mod##*/}" ;;
+            v*)        section="$tag" ;;
+            contrib/*) section="${tag#contrib/}" ;;
             *)         section="$tag" ;;
           esac
           awk -v s="## ${section}" 'index($0,s)==1 {f=1; next} f && /^## / {exit} f {print}' CHANGELOG.md > notes.md

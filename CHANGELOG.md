@@ -1,7 +1,32 @@
-# Changelog — kernel
+# Changelog — lynx-start
 
-Kernel 对外做 semver 承诺:破坏性变更升主版本(0.x 阶段升 minor),向后兼容追加升 patch。
-条目按发布时间倒序;根 CHANGELOG.md 含全仓(含模块)视角。
+lynx-start（v0.5.0 起为仓库根 module）对外做 semver 承诺:破坏性变更升主版本
+(0.x 阶段升 minor),向后兼容追加升 patch。条目按发布时间倒序。
+v0.5.0 前的条目是 kernel 子 module 谱系(`github.com/lynx-go/lynx-start/kernel`,
+tag `kernel/v*`);模块与 CLI 的历史 changelog 随分发迁至 lynx-go/lynx-mods。
+
+## v0.5.0 (2026-10-31)
+
+**定位调整(ADR-0009):仓库转型为「lynx 框架的 web 开发基础库」,模块分发
+(registry/CLI/scaffold)整体迁往 lynx-go/lynx-mods。**
+
+- **破坏:module path 变更**——kernel 升为仓库根 module
+  `github.com/lynx-go/lynx-start`(根 tag `v*`;`kernel/v*` 成为历史),
+  根包名 `kernel` 不变;全部子包 import 路径 `…/kernel/<sub>` → `…/<sub>`。
+- **破坏:根包纯契约化(D6)**——`ValidateModules/AssembleAll/PolicyFiles/
+  SortModules/Descriptors` 移至新包 `compose`;`DefaultChain` 移至新包 `chain`;
+  根包仅余契约类型与 `ValidateName/KeyOrName` 规则函数。
+- **破坏:ORM 无关化(D5)**——`Deps.DB` 由 `*bun.DB` 改 `any`(ORM 中立
+  句柄);bun 全家(bunx/uow.buntx/testutil)下沉新子 module
+  `contrib/bunx`(独立 tag,谱系承接 kernel v0.4.0 资产,提供
+  `DB()/MustDB()` 类型化出口;bun 钉 v1.3.0);
+  `OrderClause/ParseOrderBy/SortedFields` 上移核心 `crud`。
+- grpcapi 统一 v0.3.0→v0.4.0(修版本分叉);goosekit 以「派生表名安全
+  标识符」就近防御替代对根契约的依赖(保持严格中立电池)。
+- 新增 `layers_guard_test`:电池分层机器固化(严格中立集零
+  lynx/grpcapi/uptrace;根 go.mod 永不出现 ORM)。
+- 文档:ADR-0009(全决策账本 D1-D15)、battery-roadmap(三桶纪律)、
+  extending(接缝清单)、api-shapes(D14 骨架)、UPGRADING/SECURITY/README。
 
 ## v0.4.0 (2026-10-25)
 

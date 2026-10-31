@@ -1,8 +1,9 @@
 # CI 门禁：本地与云上跑同一套命令（全部经 mise 任务，工具链钉版一致）。
-#   lint        golangci-lint + gofmt 漂移
-#   test        全模块单测 + 真实 Postgres 门控测试（LYNXSTART_TEST_PG_DSN）
-#   proto-drift genproto 与 proto 必须同步入库（buf 重新生成后 diff 为空）
-#   e2e         安装管线端到端：init → add demo+identity → buf → build/vet/test
+#   lint        golangci-lint + gofmt 漂移（根 + contrib/bunx）
+#   test        全模块单测 + 真实 Postgres 门控测试（LYNXSTART_TEST_PG_DSN，
+#               归 contrib/bunx/testutil——名字不变，ADR-0009 D10）
+#   vuln        govulncheck（对齐 grpcapi 生态基线；不含 gosec，随安全线推进）
+# 模块分发侧（proto-drift / e2e 组合矩阵）随 registry 迁至 lynx-go/lynx-mods。
 name: CI
 
 on:
@@ -65,48 +66,17 @@ jobs:
           restore-keys: go-${{ runner.os }}-
       - run: mise run test
 
-  proto-drift:
+  vuln:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
       - uses: jdx/mise-action@v2
-      - name: 重新生成并比对（genproto 必须与 proto 同步入库）
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - name: govulncheck（根 + contrib）
         run: |
-          mise run generate:proto
-          git diff --exit-code -- modules/
-
-  # 组合矩阵（I-10）：单模块 / 依赖边 / 全量——模块间兼容性声明再严谨,
-  # 也不如把组合真的跑起来;新增模块登记 registry.json 后在矩阵里补组合。
-  e2e:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        modules:
-          - "demo"
-          - "identity"
-          - "identity session"
-          - "identity access"
-          - "identity organization"
-          - "identity organization notification"
-          - "identity organization task"
-          - "demo identity session access audit organization notification task"
-    env:
-      LYNX_E2E_MODULES: ${{ matrix.modules }}
-    steps:
-      # fetch-depth 0：test:scaffold 的 update 场景装 identity@0.1.0，
-      # 版本解析依赖 git tag（modules/identity/v0.1.0 指向历史提交）。
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-      - uses: jdx/mise-action@v2
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/go/pkg/mod
-            ~/.cache/go-build
-          key: go-${{ runner.os }}-${{ hashFiles('**/go.sum', 'go.work.sum') }}
-          restore-keys: go-${{ runner.os }}-
-      - run: mise run test:scaffold
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...
+          (cd contrib/bunx && govulncheck ./...)

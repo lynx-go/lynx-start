@@ -10,9 +10,9 @@ import (
 	"database/sql"
 	"fmt"
 	"io/fs"
+	"regexp"
 	"strings"
 
-	"github.com/lynx-go/lynx-start"
 	"github.com/pressly/goose/v3"
 )
 
@@ -21,13 +21,19 @@ func TableName(module string) string {
 	return "goose_" + strings.ReplaceAll(module, "-", "_") + "_db"
 }
 
+// tableNameRe 是派生表名的就近防注入防御：只许小写字母/数字/下划线。
+// 与模块命名规约（kernel.ValidateName）相互独立——本包是 ORM 中立电池，
+// 不 import 根契约。
+var tableNameRe = regexp.MustCompile(`^[a-z0-9_]+$`)
+
 // provider 构造模块迁移链的 goose provider（root=迁移目录本身）。
 func provider(db *sql.DB, fsys fs.FS, module string) (*goose.Provider, error) {
-	if err := kernel.ValidateName(module); err != nil {
-		return nil, fmt.Errorf("goosekit: %w", err)
+	table := TableName(module)
+	if !tableNameRe.MatchString(table) {
+		return nil, fmt.Errorf("goosekit: module name %q derives unsafe table name", module)
 	}
 	return goose.NewProvider(goose.DialectPostgres, db, fsys,
-		goose.WithTableName(TableName(module)),
+		goose.WithTableName(table),
 		// 应用侧逐链执行时放宽乱序（不同链无共享序），链内仍严格递增。
 		goose.WithAllowOutofOrder(true),
 	)

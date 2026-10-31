@@ -1,7 +1,11 @@
 # lynx-start
 
-lynx 生态「shadcn 式模块基建」的统一语言。以下术语是模块模型的 canonical 命名，代码、schema 与文档一律从这里取词。
+lynx 生态 web 开发范式的统一语言。以下术语是 canonical 命名，代码、schema 与文档一律从这里取词。
 _（每个术语附英文对照；English readers: the italic line under each term is the English gloss.）_
+
+> **2026-10-31 起（ADR-0009）**：本仓转型「lynx 框架的 web 开发基础库」。Kernel/电池术语继续有效；
+> 模块分发侧术语（Module/Registry/Item/App Manifest/Scaffold 等）的事实源随迁移转至
+> **lynx-go/lynx-mods 的 GLOSSARY**——本文件保留它们作为历史对照，不再更新。
 
 ## 供给结构（Supply）
 

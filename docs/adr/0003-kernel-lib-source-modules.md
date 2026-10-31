@@ -10,3 +10,13 @@ lynx-start 的供给形态为三层：框架层（lynx/grpcapi/bun/goose/wire，
 - 全源码（Kernel 也安装为源码）：所有权更彻底，但失去编译期稳定契约，升级面更碎。
 - 全库（模块做成库）：回到插件/回调地狱，无法预判产品的真实变化点，已被讨论否决。
 - 纯 fork 模板：横切改进无法回流，且「按需安装」无从谈起。
+
+## 修订（2026-10-31，ADR-0009）
+
+三层供给拆为两仓各执一层：**lynx-start = Kernel 契约库**（本文的
+「Kernel=库」层，升为仓库根 module，`github.com/lynx-go/lynx-start`），
+定位细化为「lynx 框架的 web 开发基础库」；**lynx-go/lynx-mods = 源码
+模块 registry + 安装 CLI**（本文的「模块=源码、registry=演化」层，含
+scaffold/init/generate）。shadcn 参照系不变：Radix≈lynx 生态基座、
+组件≈模块、registry 协议≈git tag 分发。模块编译期依赖 lynx-start
+契约（kernelConstraint），分发协议与版本解析随 lynx-mods 演化。
