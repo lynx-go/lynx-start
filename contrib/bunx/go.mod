@@ -63,5 +63,3 @@ require (
 	google.golang.org/protobuf v1.36.12 // indirect
 	mellium.im/sasl v0.3.2 // indirect
 )
-
-replace github.com/lynx-go/lynx-start => ../..
