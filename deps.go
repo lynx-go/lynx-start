@@ -7,7 +7,6 @@ import (
 	"github.com/lynx-go/lynx-start/events"
 	"github.com/lynx-go/lynx-start/uow"
 	"github.com/lynx-go/lynx/eventbus"
-	"github.com/uptrace/bun"
 )
 
 // Deps 是应用基础层提供给每个模块的共享依赖：数据库连接、工作单元、
@@ -15,7 +14,10 @@ import (
 // 所有）在自己的 Assemble 里消费 Deps 构造仓储与用例——依赖显式、
 // 代码可直读直改，不引入生成式 DI 的重装步骤。
 type Deps struct {
-	DB     *bun.DB
+	// DB 是应用的 ORM 句柄，ORM 中立（ADR-0009 D5）：核心不绑 bun，
+	// 具体类型由所选适配子模块约定——bun 应用经 contrib/bunx 的
+	// bunx.DB(deps)/MustDB(deps) 取 *bun.DB，其他 ORM 自带适配器。
+	DB     any
 	Tx     uow.Runner
 	Events events.Publisher
 	// Bus 是事件总线的订阅侧：发布走 Events 端口（信封校验与编码归一），

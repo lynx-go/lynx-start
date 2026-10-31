@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lynx-go/lynx-start/bunx"
+	"github.com/lynx-go/lynx-start/contrib/bunx"
 	"github.com/lynx-go/lynx-start/goosekit"
 	"github.com/lynx-go/lynx-start/idgen"
 	"github.com/uptrace/bun"

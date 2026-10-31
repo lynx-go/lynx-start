@@ -1,5 +1,7 @@
-// Package bunx 是 bun 集成的标准姿势：连接引导（DSN→*bun.DB）、
-// AIP-132 白名单排序解析、泛型列表执行（count + order + 分页 + 领域转换）。
+// Package bunx 是 bun 适配器（ADR-0009 D5：核心不绑 ORM，bun 是可选实现）：
+// 连接引导（DSN→*bun.DB）、Deps.DB 中立句柄的类型化出口（DB/MustDB）、
+// 白名单排序应用与泛型列表执行（count + order + 分页 + 领域转换）。
+// 排序解析（ParseOrderBy/OrderClause）是 ORM 中立件，住在核心 crud 包。
 // 过滤（AIP-160）不内置——动态查询语义属于模块，经 queryModifier 注入。
 package bunx
 
@@ -7,9 +9,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"sort"
-	"strings"
 
+	kernel "github.com/lynx-go/lynx-start"
 	"github.com/lynx-go/lynx-start/crud"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
@@ -41,47 +42,27 @@ func OpenDB(dsn string, opts Options) (*bun.DB, error) {
 	return bun.NewDB(sqldb, pgdialect.New()), nil
 }
 
-// OrderClause 是一个已解析的排序列：列表达式 + 方向。
-type OrderClause struct {
-	Expr     string // 白名单映射后的列表达式（含别名，如 "d.created_at"）
-	Desc     bool
-	RawField string // 原始请求字段名（错误信息用）
+// DB 从 Deps 取出 *bun.DB。Deps.DB 是 ORM 中立句柄（any），bun 应用的
+// 具体类型由本适配包约定；类型不符即报错（装配错配应在组合根暴露）。
+func DB(deps kernel.Deps) (*bun.DB, error) {
+	db, ok := deps.DB.(*bun.DB)
+	if !ok {
+		return nil, fmt.Errorf("bunx: deps.DB is %T, want *bun.DB", deps.DB)
+	}
+	return db, nil
 }
 
-// ParseOrderBy 解析 AIP-132 排序串（"field desc, other"）到白名单列。
-// fields: API 字段名 → SQL 列表达式；未知字段/方向即拒绝（fail-closed）。
-func ParseOrderBy(orderBy string, fields map[string]string) ([]OrderClause, error) {
-	s := strings.TrimSpace(orderBy)
-	if s == "" {
-		return nil, nil
+// MustDB 同 DB，但类型不符时 panic——仅供组合根装配期使用。
+func MustDB(deps kernel.Deps) *bun.DB {
+	db, err := DB(deps)
+	if err != nil {
+		panic(err)
 	}
-	var out []OrderClause
-	for _, part := range strings.Split(s, ",") {
-		part = strings.TrimSpace(part)
-		if part == "" {
-			return nil, fmt.Errorf("order_by: empty clause")
-		}
-		field, dir := part, "asc"
-		if idx := strings.LastIndexAny(part, " \t"); idx >= 0 {
-			field, dir = strings.TrimSpace(part[:idx]), strings.TrimSpace(part[idx+1:])
-		}
-		expr, ok := fields[field]
-		if !ok {
-			return nil, fmt.Errorf("order_by: unknown field %q", field)
-		}
-		switch strings.ToLower(dir) {
-		case "asc":
-		case "desc":
-		default:
-			return nil, fmt.Errorf("order_by: invalid direction %q", dir)
-		}
-		out = append(out, OrderClause{Expr: expr, Desc: strings.ToLower(dir) == "desc", RawField: field})
-	}
-	return out, nil
+	return db
 }
 
 // ApplyOrder 把解析结果应用到查询（等值列自动追加主键决胜，保证分页稳定）。
-func ApplyOrder(q *bun.SelectQuery, clauses []OrderClause, tiebreak ...string) *bun.SelectQuery {
+func ApplyOrder(q *bun.SelectQuery, clauses []crud.OrderClause, tiebreak ...string) *bun.SelectQuery {
 	for _, c := range clauses {
 		q = q.OrderExpr("? ?", bun.Ident(c.Expr), bun.Safe(directionSQL(c.Desc)))
 	}
@@ -136,7 +117,7 @@ func List[M any, D any](ctx context.Context, db *bun.DB, params crud.ListParams,
 	}
 
 	q := base()
-	clauses, err := ParseOrderBy(params.OrderBy, spec.Fields)
+	clauses, err := crud.ParseOrderBy(params.OrderBy, spec.Fields)
 	if err != nil {
 		return nil, err
 	}
@@ -164,14 +145,4 @@ func List[M any, D any](ctx context.Context, db *bun.DB, params crud.ListParams,
 		out.Items = append(out.Items, spec.Convert(&models[i]))
 	}
 	return out, nil
-}
-
-// SortedFields 返回白名单字段名（错误信息/文档生成用，稳定排序）。
-func SortedFields(fields map[string]string) []string {
-	out := make([]string, 0, len(fields))
-	for f := range fields {
-		out = append(out, f)
-	}
-	sort.Strings(out)
-	return out
 }

@@ -1,4 +1,4 @@
-package bunx
+package crud
 
 import (
 	"testing"
