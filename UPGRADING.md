@@ -54,9 +54,31 @@ go mod tidy
 
 grpcapi 统一到 v0.4.0；bun 保持 v1.3.0。
 
-### 5. 模块分发侧
+### 5. 模块分发侧（实战版，金丝雀 lynx-start-demo 已走通）
 
 安装 CLI 更名 **lynx-mods**（`go install github.com/lynx-go/lynx-mods/cli/cmd/lynx-mods@latest`），
-registry 迁至 lynx-go/lynx-mods；应用内 `lynx-start.json`→`lynx-mods.json`、
-`.lynx-start/`→`.lynx-mods/`。已装模块的应用按 lynx-mods 仓的升级指引
-逐模块 `add <m> -o` 重建基线（金丝雀实例：lynx-start-demo 的迁移提交）。
+registry 迁至 lynx-go/lynx-mods。已装模块的应用 in-place 迁移步骤：
+
+```bash
+# ① 应用侧锚点/文件换代（add 依赖这些锚点）
+rm -rf .lynx-start lynx-start.json
+sed -i 's/lynx-start:config-fragment/lynx-mods:config-fragment/' configs/config.yaml*
+cp <lynx-mods 仓>/scaffold/modules/modules.go modules/modules.go   # 新模板（空登记表）
+printf '{"schema":1,"name":"<app>","modulePath":"<module-path>","registry":"<lynx-mods>","modules":[]}\n' > lynx-mods.json
+
+# ② 按依赖序全量重装（-o 重建基线/桥接包/登记）
+for m in demo identity session access audit organization notification task; do
+  lynx-mods add "$m" -o --registry <lynx-mods 仓>
+done
+
+# ③ 老一代 scaffold 生成的 cmd/server/main.go 需同步新版（chain.DefaultChain
+#    接管默认链组装；旧形态 AssembleWith(DefaultChainOptions, agg.Stages...)
+#    在装 Stage 模块时启动即失败）
+
+# ④ generate → tidy → build → vet → test（PG 门控设 LYNXSTART_TEST_PG_DSN）
+lynx-mods generate && go mod tidy && go build ./... && go vet ./... && go test ./...
+lynx-mods doctor --registry <lynx-mods 仓>
+```
+
+注意：`cmd/migrate/main.go` 等换装后可能出现未使用的 `kernel` import（删之）；
+.env/config.yaml 的 DSN 不受影响。
