@@ -45,6 +45,10 @@ var pageTokenMarshal = json.Marshal
 
 // InitPageTokenSigning 启用页 token 的 HMAC 签名与验签。master 为部署主密钥；
 // 实际密钥经 secretkey.Derive(master, purpose) 派生，与其他用途域隔离。
+// Deprecated: v1 分页形态。ADR-0009 D11 已定典多模式框架（Spec/Parse/
+// Cursor/ApplyPage）：bounded/offset/keyset 三模式 + 白名单排序 + 编码
+// 游标（encode-not-sign，无密钥仪式）。新代码一律使用 v2；本组 API 保持
+// 编译兼容，随模块换装退场。
 func InitPageTokenSigning(master string) error {
 	if err := secretkey.MustValidate(master, "page token signing"); err != nil {
 		return err
@@ -75,6 +79,10 @@ func seal(data *PageTokenData) {
 	}
 }
 
+// Deprecated: v1 分页形态。ADR-0009 D11 已定典多模式框架（Spec/Parse/
+// Cursor/ApplyPage）：bounded/offset/keyset 三模式 + 白名单排序 + 编码
+// 游标（encode-not-sign，无密钥仪式）。新代码一律使用 v2；本组 API 保持
+// 编译兼容，随模块换装退场。
 // PageTokenData 是页 token 的内部结构（AIP-158）。
 type PageTokenData struct {
 	Version      string    `json:"v"`

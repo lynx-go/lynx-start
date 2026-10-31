@@ -18,6 +18,10 @@ const (
 	DefaultPageSizeNoToken = 50
 )
 
+// Deprecated: v1 分页形态。ADR-0009 D11 已定典多模式框架（Spec/Parse/
+// Cursor/ApplyPage）：bounded/offset/keyset 三模式 + 白名单排序 + 编码
+// 游标（encode-not-sign，无密钥仪式）。新代码一律使用 v2；本组 API 保持
+// 编译兼容，随模块换装退场。
 // ListParams 是 AIP-132/158 列表请求的解析产物。Filter/OrderBy 作为 token
 // 绑定通道保留（跨页一致性校验）；解析与白名单校验由模块自己的列表端口
 // 负责（动态查询语义属于模块，不属于 Kernel）。
@@ -29,6 +33,10 @@ type ListParams struct {
 	Offset    int
 }
 
+// Deprecated: v1 分页形态。ADR-0009 D11 已定典多模式框架（Spec/Parse/
+// Cursor/ApplyPage）：bounded/offset/keyset 三模式 + 白名单排序 + 编码
+// 游标（encode-not-sign，无密钥仪式）。新代码一律使用 v2；本组 API 保持
+// 编译兼容，随模块换装退场。
 // ParseListParams 解析并校验列表参数（AIP-158）：页大小钳制、token 签名验证、
 // offset 上限、order_by/filter 与签发该 token 的请求一致。
 func ParseListParams(pageSize int32, pageToken, filter, orderBy string) (ListParams, error) {
@@ -68,6 +76,10 @@ func ParseListParams(pageSize int32, pageToken, filter, orderBy string) (ListPar
 	return params, nil
 }
 
+// Deprecated: v1 分页形态。ADR-0009 D11 已定典多模式框架（Spec/Parse/
+// Cursor/ApplyPage）：bounded/offset/keyset 三模式 + 白名单排序 + 编码
+// 游标（encode-not-sign，无密钥仪式）。新代码一律使用 v2；本组 API 保持
+// 编译兼容，随模块换装退场。
 // OffsetPage 是一次 offset 分页查询的收尾面：终止契约与双向 token 的单点裁决。
 type OffsetPage struct {
 	PageSize   int32
@@ -76,6 +88,10 @@ type OffsetPage struct {
 	PrevToken  string // 空 = 无上一页
 }
 
+// Deprecated: v1 分页形态。ADR-0009 D11 已定典多模式框架（Spec/Parse/
+// Cursor/ApplyPage）：bounded/offset/keyset 三模式 + 白名单排序 + 编码
+// 游标（encode-not-sign，无密钥仪式）。新代码一律使用 v2；本组 API 保持
+// 编译兼容，随模块换装退场。
 // FinalizeOffsetPage 对一页结果做分页收尾：裁决终止契约并编码双向 token。
 // returned 是本页实际行数；total 未知传 -1（此时不发 next token）。
 func FinalizeOffsetPage(params ListParams, total, returned int) (OffsetPage, error) {
@@ -101,6 +117,10 @@ func FinalizeOffsetPage(params ListParams, total, returned int) (OffsetPage, err
 	return page, nil
 }
 
+// Deprecated: v1 分页形态。ADR-0009 D11 已定典多模式框架（Spec/Parse/
+// Cursor/ApplyPage）：bounded/offset/keyset 三模式 + 白名单排序 + 编码
+// 游标（encode-not-sign，无密钥仪式）。新代码一律使用 v2；本组 API 保持
+// 编译兼容，随模块换装退场。
 // SliceOffsetPage 在内存全量列表上切页并收尾（小表枚举端点的形状）。
 func SliceOffsetPage[T any](items []T, params ListParams) ([]T, OffsetPage, error) {
 	start := params.Offset
@@ -118,6 +138,10 @@ func SliceOffsetPage[T any](items []T, params ListParams) ([]T, OffsetPage, erro
 	return items[start:end], page, nil
 }
 
+// Deprecated: v1 分页形态。ADR-0009 D11 已定典多模式框架（Spec/Parse/
+// Cursor/ApplyPage）：bounded/offset/keyset 三模式 + 白名单排序 + 编码
+// 游标（encode-not-sign，无密钥仪式）。新代码一律使用 v2；本组 API 保持
+// 编译兼容，随模块换装退场。
 // FilterDigest 返回 filter 表达式的确定性摘要（token 绑定）：归一化原文哈希。
 func FilterDigest(filter string) string {
 	normalized := strings.TrimSpace(strings.ToLower(filter))

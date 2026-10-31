@@ -13,6 +13,11 @@ import (
 //   - 方向前缀 "a:"=ASC / "d:"=DESC：方向决定游标语义（「晚于」vs「早于」），
 //     跨方向复用 token 会静默错乱，DecodeTimeCursorDirection 在解码期拒绝；
 //   - Tiebreak 是同刻多行的决胜字段，进 keyset 谓词保证不重不漏。
+//
+// Deprecated: v1 分页形态。ADR-0009 D11 已定典多模式框架（Spec/Parse/
+// Cursor/ApplyPage）：bounded/offset/keyset 三模式 + 白名单排序 + 编码
+// 游标（encode-not-sign，无密钥仪式）。新代码一律使用 v2；本组 API 保持
+// 编译兼容，随模块换装退场。
 type TimeCursor struct {
 	Ascending bool
 	Time      time.Time

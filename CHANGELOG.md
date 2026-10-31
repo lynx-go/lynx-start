@@ -5,6 +5,22 @@ lynx-start（v0.5.0 起为仓库根 module）对外做 semver 承诺:破坏性�
 v0.5.0 前的条目是 kernel 子 module 谱系(`github.com/lynx-go/lynx-start/kernel`,
 tag `kernel/v*`);模块与 CLI 的历史 changelog 随分发迁至 lynx-go/lynx-mods。
 
+## v0.5.1 (2026-11-01)
+
+- **crud v2 多模式分页框架（ADR-0009 D11 定典落地，dogfood 首循环①）**：
+  `Spec`（方法级声明：开放模式/排序白名单/limit 钳制/唯一决胜列）+
+  `Parse[F]`（模式裁决：After→keyset、Offset→offset、首页按已开放优先级；
+  决胜列强制追加、白名单 fail-closed）+ `Cursor`（keyset 游标=编码
+  「排序键值向量+order 摘要+filter 摘要」，encode-not-sign 无密钥仪式，
+  换序/换滤自失效）+ `PagePlan`（执行面，适配层消费）+ `ClampLimit`/
+  `HasMore`；`Predicates` 最小 typed 谓词集（等值/IN/区间，AND）实现
+  FilterDigester。contrib/bunx 新增 `ApplyPage`（三模式 SQL 形态；keyset
+  用展开 OR 谓词，混合方向排序正确）。组合矩阵测试覆盖
+  三模式×filter（绑定/未绑定）×orderby（默认/显式/决胜列去重）。
+- **v1 分页 API 标记 Deprecated**（ListParams/ParseListParams/
+  FinalizeOffsetPage/SliceOffsetPage/FilterDigest/InitPageTokenSigning/
+  PageTokenData/TimeCursor）：保持编译兼容，随模块换装 v2 退场。
+
 ## v0.5.0 (2026-10-31)
 
 **定位调整(ADR-0009):仓库转型为「lynx 框架的 web 开发基础库」,模块分发

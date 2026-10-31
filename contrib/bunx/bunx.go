@@ -102,6 +102,10 @@ type Result[D any] struct {
 
 // List 执行 count + 排序 + 分页扫描 + 领域转换；params 来自
 // crud.ParseListParams（token 一致性与 offset 上限已校验）。
+//
+// Deprecated: v1 分页形态（ADR-0009 D11）。新代码用 Spec.Parse 产出
+// PagePlan 后经 ApplyPage 编译，配合 crud.Cursor 编码游标；本函数保持
+// 编译兼容，随模块换装退场。
 func List[M any, D any](ctx context.Context, db *bun.DB, params crud.ListParams, spec ListSpec[M, D]) (*Result[D], error) {
 	base := func() *bun.SelectQuery {
 		q := db.NewSelect().Model((*M)(nil))
