@@ -31,8 +31,9 @@ type thingModel struct {
 }
 
 // TestNewDBIsolationAndMigrate 验证隔离建库、迁移链就绪与 bunx.List 协作。
-//nolint:staticcheck // v1 管线（ParseListParams/bunx.List/EncodePageToken）的
 // 集成测试：换装 v2 前持续守护编译兼容面。
+//
+//nolint:staticcheck // v1 管线（ParseListParams/bunx.List/EncodePageToken）的
 func TestNewDBIsolationAndMigrate(t *testing.T) {
 	db := NewDB(t, Chain{Module: "testmod", FS: testMigrations(t)})
 
