@@ -6,8 +6,8 @@ import (
 	"io/fs"
 	"testing"
 
-	"github.com/lynx-go/lynx-start/kernel/bunx"
-	"github.com/lynx-go/lynx-start/kernel/crud"
+	"github.com/lynx-go/lynx-start/bunx"
+	"github.com/lynx-go/lynx-start/crud"
 	"github.com/uptrace/bun"
 )
 

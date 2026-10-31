@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lynx-go/lynx-start/kernel/clock"
+	"github.com/lynx-go/lynx-start/clock"
 )
 
 var master = "test-master-0123456789abcdef-0123456789abcdef"

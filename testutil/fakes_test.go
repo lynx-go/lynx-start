@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lynx-go/lynx-start/kernel/events"
-	"github.com/lynx-go/lynx-start/kernel/idgen"
-	"github.com/lynx-go/lynx-start/kernel/testutil"
+	"github.com/lynx-go/lynx-start/events"
+	"github.com/lynx-go/lynx-start/idgen"
+	"github.com/lynx-go/lynx-start/testutil"
 )
 
 func TestCapturePublisher(t *testing.T) {

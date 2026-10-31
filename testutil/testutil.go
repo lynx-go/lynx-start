@@ -14,9 +14,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lynx-go/lynx-start/kernel/bunx"
-	"github.com/lynx-go/lynx-start/kernel/goosekit"
-	"github.com/lynx-go/lynx-start/kernel/idgen"
+	"github.com/lynx-go/lynx-start/bunx"
+	"github.com/lynx-go/lynx-start/goosekit"
+	"github.com/lynx-go/lynx-start/idgen"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/driver/pgdriver"
 )

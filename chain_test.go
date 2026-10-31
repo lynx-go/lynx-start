@@ -8,7 +8,7 @@ import (
 	grpcapiauthn "github.com/lynx-go/grpcapi/authn"
 	grpcapiinterceptor "github.com/lynx-go/grpcapi/interceptor"
 	grpcapipolicy "github.com/lynx-go/grpcapi/policy"
-	"github.com/lynx-go/lynx-start/kernel"
+	"github.com/lynx-go/lynx-start"
 	"google.golang.org/grpc"
 )
 

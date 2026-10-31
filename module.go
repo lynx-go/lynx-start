@@ -19,7 +19,7 @@ import (
 	"strings"
 
 	"github.com/lynx-go/grpcapi/server"
-	"github.com/lynx-go/lynx-start/kernel/events"
+	"github.com/lynx-go/lynx-start/events"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 

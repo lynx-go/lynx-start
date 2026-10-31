@@ -12,7 +12,7 @@ import (
 	"io/fs"
 	"strings"
 
-	"github.com/lynx-go/lynx-start/kernel"
+	"github.com/lynx-go/lynx-start"
 	"github.com/pressly/goose/v3"
 )
 

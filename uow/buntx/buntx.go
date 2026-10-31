@@ -5,7 +5,7 @@ package buntx
 import (
 	"context"
 
-	"github.com/lynx-go/lynx-start/kernel/uow"
+	"github.com/lynx-go/lynx-start/uow"
 	"github.com/uptrace/bun"
 )
 

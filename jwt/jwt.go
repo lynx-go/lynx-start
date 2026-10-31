@@ -16,9 +16,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lynx-go/lynx-start/kernel/clock"
-	"github.com/lynx-go/lynx-start/kernel/idgen"
-	"github.com/lynx-go/lynx-start/kernel/secretkey"
+	"github.com/lynx-go/lynx-start/clock"
+	"github.com/lynx-go/lynx-start/idgen"
+	"github.com/lynx-go/lynx-start/secretkey"
 )
 
 // Claims 是受支持的标准声明 + 自定义字符串声明集。

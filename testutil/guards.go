@@ -11,7 +11,7 @@ import (
 )
 
 // kernelRootPath 是根包(Deps/Assembly 所在)的 import 路径。
-const kernelRootPath = "github.com/lynx-go/lynx-start/kernel"
+const kernelRootPath = "github.com/lynx-go/lynx-start"
 
 // AssertDepsAtAPILayer 断言 kernel 根包未被 dirs 内的代码 import——
 // Deps 只允许出现在 api 装配层(internal/api/<m>/module.go);domain/app/infra

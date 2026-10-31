@@ -15,7 +15,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/lynx-go/lynx-start/kernel/secretkey"
+	"github.com/lynx-go/lynx-start/secretkey"
 )
 
 const (
