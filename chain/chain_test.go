@@ -1,4 +1,4 @@
-package kernel_test
+package chain_test
 
 import (
 	"context"
@@ -8,7 +8,8 @@ import (
 	grpcapiauthn "github.com/lynx-go/grpcapi/authn"
 	grpcapiinterceptor "github.com/lynx-go/grpcapi/interceptor"
 	grpcapipolicy "github.com/lynx-go/grpcapi/policy"
-	"github.com/lynx-go/lynx-start"
+	kernel "github.com/lynx-go/lynx-start"
+	"github.com/lynx-go/lynx-start/chain"
 	"google.golang.org/grpc"
 )
 
@@ -27,16 +28,16 @@ func TestDefaultChainNoStages(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewSet: %v", err)
 	}
-	chain, err := kernel.DefaultChain(slog.Default(), set, &kernel.Aggregated{}, grpcapiauthn.Options{})
+	ch, err := chain.DefaultChain(slog.Default(), set, &kernel.Aggregated{}, grpcapiauthn.Options{})
 	if err != nil {
 		t.Fatalf("DefaultChain: %v", err)
 	}
-	if chain != nil {
+	if ch != nil {
 		t.Error("chain should be nil when no stages are contributed (server.New builds its own default chain)")
 	}
-	chain, err = kernel.DefaultChain(slog.Default(), set, nil, grpcapiauthn.Options{})
-	if err != nil || chain != nil {
-		t.Errorf("nil aggregated should give (nil, nil), got (%v, %v)", chain, err)
+	ch, err = chain.DefaultChain(slog.Default(), set, nil, grpcapiauthn.Options{})
+	if err != nil || ch != nil {
+		t.Errorf("nil aggregated should give (nil, nil), got (%v, %v)", ch, err)
 	}
 }
 
@@ -46,11 +47,11 @@ func TestDefaultChainWithStages(t *testing.T) {
 		t.Fatalf("NewSet: %v", err)
 	}
 	agg := &kernel.Aggregated{Stages: []grpcapiinterceptor.Stage{dummyStage(50)}}
-	chain, err := kernel.DefaultChain(slog.Default(), set, agg, grpcapiauthn.Options{})
+	ch, err := chain.DefaultChain(slog.Default(), set, agg, grpcapiauthn.Options{})
 	if err != nil {
 		t.Fatalf("DefaultChain: %v", err)
 	}
-	if chain == nil {
+	if ch == nil {
 		t.Fatal("chain should be built when stages are contributed")
 	}
 }
