@@ -1,14 +1,3 @@
 go 1.26.8
 
-use (
-	./cli
-	./kernel
-	./modules/access
-	./modules/audit
-	./modules/demo
-	./modules/identity
-	./modules/notification
-	./modules/organization
-	./modules/session
-	./modules/task
-)
+use ./kernel
